@@ -47,8 +47,8 @@ class Webhook extends CI_Controller {
 
 		parent::__construct();
 		// create bot object
-		$httpClient = new CurlHTTPClient($_ENV['CHANNEL_ACCESS_TOKEN']);
-		$this->bot  = new LINEBot($httpClient, ['channelSecret' => $_ENV['CHANNEL_SECRET']]);
+		$httpClient = new CurlHTTPClient($_ENV['MTn2latTZ4NmBnuah67007iRDPdliDVKkpxR1yb5IGpzTARdjzAqSnLmhkvew0EqfNs3wDSQuTc8j/DUfKCoPFpV3ECtur1KUxyiRd1jZjeS9JA7yJXlkuK6l6/WkCJEKDybBDiRMdFbYxtFlRYOmQdB04t89/1O/w1cDnyilFU=']);
+		$this->bot  = new LINEBot($httpClient, ['channelSecret' => $_ENV['adbb3952c8bc75b90664aa5ededbbbec']]);
 		$this->load->model('tebakangaring_m');
 
 	}
