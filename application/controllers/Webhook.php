@@ -49,7 +49,7 @@ class Webhook extends CI_Controller {
 		// create bot object
 		$httpClient = new CurlHTTPClient($_ENV['CHANNEL_ACCESS_TOKEN']);
 		$this->bot  = new LINEBot($httpClient, ['channelSecret' => $_ENV['CHANNEL_SECRET']]);
-		$this->load->model('tebakkode_m');
+		$this->load->model('tebakangaring_m');
 
 	}
 
@@ -82,7 +82,7 @@ class Webhook extends CI_Controller {
 		$this->events = json_decode($body, true);
 
 
-		$this->tebakkode_m->log_events($this->signature, $body);
+		$this->tebakangaring_m->log_events($this->signature, $body);
 
 		foreach ($this->events['events'] as $event)
 
@@ -96,7 +96,7 @@ class Webhook extends CI_Controller {
 
    // get user data from database
 
-			$this->user = $this->tebakkode_m->getUser($event['source']['userId']);
+			$this->user = $this->tebakangaring_m->getUser($event['source']['userId']);
 
    // respond event
 
@@ -137,7 +137,7 @@ class Webhook extends CI_Controller {
 
         // save user data
 
-			$this->tebakkode_m->saveUser($profile);
+			$this->tebakangaring_m->saveUser($profile);
 			// send welcome message
 			$message = "Halo, " . $profile['displayName'] . "!\n";
 			$message .= "Seberapa garingkah Anda?\n\nYuk mari kita tes dengan menjawab beberapa pertanyaan-pertanyaan garing!\n\n";
@@ -166,24 +166,25 @@ class Webhook extends CI_Controller {
 			if($userMessage == 'start')
 
 			{
-				//$getnum = $this->tebakkode_m->countQuestions();
+				$getnum = $this->tebakangaring_m->countQuestions();
+				$message = "Silakan pilih nomor kuis yang Anda inginkan\n(ketik nomor kuis, antara 1 sampai ".$getnum.")";
+				$textMessageBuilder = new TextMessageBuilder($message);
+				$this->bot->pushMessage($event['source']['userId'], $textMessageBuilder);
+
+				//$getnum = $this->tebakangaring_m->countQuestions();
 				//$gettest = $this->db->get('questions')->row_array();
 				//$count = count($gettest);
-				$num = rand(1,16);
-
-            // reset score
-
-				//$this->tebakkode_m->setScore($this->user['user_id'], 0);
+				//$num = rand(1,16);
 
 
             // update number progress
 
-				$this->tebakkode_m->setUserProgress($this->user['user_id'], $num);
+				//$this->tebakangaring_m->setUserProgress($this->user['user_id'], $num);
 
 
-            // send question no.1
+            // send question
 
-				$this->sendQuestion($this->user['user_id'], $num);
+				//$this->sendQuestion($this->user['user_id'], $num);
 
 
 			} else {
@@ -199,11 +200,21 @@ class Webhook extends CI_Controller {
 
         // if user already begin test
 
-		} else {
-			$this->checkAnswer($userMessage);
 		}
+		elseif ($this->user['number'] > 0) {
+			$this->checkAnswer($userMessage);
 
 	}
+
+	private function pilihKuis($message){
+					$pilihMsg = $event['message']['text'];
+					$getnum = $this->tebakangaring_m->countQuestions();
+					if($pilihMsg > 0 || $pilihMsg < $getnum+1){
+						$this->sendQuestion($this->user['user_id'], $pilihMsg);
+					}else{
+						
+					}
+				}
 
 	public function sendQuestion($user_id, $questionNum)
 
@@ -211,7 +222,7 @@ class Webhook extends CI_Controller {
 
     // get question from database
 
-		$question = $this->tebakkode_m->getQuestion($questionNum);
+		$question = $this->tebakangaring_m->getQuestion($questionNum);
 
 
     // prepare answer options
@@ -249,10 +260,10 @@ class Webhook extends CI_Controller {
 
     // if answer is true, increment score
 
-			if($this->tebakkode_m->isAnswerEqual($this->user['number'], $message)){
+			if($this->tebakangaring_m->isAnswerEqual($this->user['number'], $message)){
 
 				//$this->user['score']++;
-				//$this->tebakkode_m->setScore($this->user['user_id'], $this->user['score']);
+				//$this->tebakangaring_m->setScore($this->user['user_id'], $this->user['score']);
 				//$msg = 'Skormu '. $this->user['score'] ."\n" . 'ketik "START" untuk bermain lagi.';
 				$msg = "duh ketebak! harus lebih garing lagi nih pertanyaannya...";
 				$textMessageBuilder = new TextMessageBuilder($msg);
@@ -261,30 +272,13 @@ class Webhook extends CI_Controller {
 				$this->bot->pushMessage($this->user['user_id'], $stickerMessageBuilder);
 
 				$this->sendPenjelasan($this->user['user_id'],$this->user['number']);
-				$this->tebakkode_m->setTry($this->user['user_id'], 0);
-				$this->tebakkode_m->setUserProgress($this->user['user_id'], 0);
+				$this->tebakangaring_m->setTry($this->user['user_id'], 0);
+				$this->tebakangaring_m->setUserProgress($this->user['user_id'], 0);
 				$next = "ketik \"START\" untuk bermain lagi.";
 				$txtMsg = new TextMessageBuilder($next);
 				$this->bot->pushMessage($this->user['user_id'],$txtMsg);
 
 			}
-
-
-		/*if($this->user['number'] < 10)
-
-		{
-
-        // update number progress
-
-			$this->tebakkode_m->setUserProgress($this->user['user_id'], $this->user['number'] + 1);
-
-
-        // send next number
-
-			$this->sendQuestion($this->user['user_id'], $this->user['number'] + 1);
-
-		}*/
-
 
 		else {
 
@@ -300,7 +294,7 @@ class Webhook extends CI_Controller {
 
 				$this->bot->pushMessage($this->user['user_id'], $textMessageBuilder);
 
-				$this->tebakkode_m->setTry($this->user['user_id'], $coba);
+				$this->tebakangaring_m->setTry($this->user['user_id'], $coba);
 			}
 			else{
 
@@ -311,15 +305,15 @@ class Webhook extends CI_Controller {
 				$this->bot->pushMessage($this->user['user_id'], $textMessageBuilder);
 
 				$this->sendPenjelasan($this->user['user_id'],$this->user['number']);
-				$this->tebakkode_m->setTry($this->user['user_id'], 0);
-				$this->tebakkode_m->setUserProgress($this->user['user_id'], 0);
+				$this->tebakangaring_m->setTry($this->user['user_id'], 0);
+				$this->tebakangaring_m->setUserProgress($this->user['user_id'], 0);
 			}
 		}
 
 	}
 
 	private function sendPenjelasan($user_id, $questionNum){
-		$question = $this->tebakkode_m->getQuestion($questionNum);
+		$question = $this->tebakangaring_m->getQuestion($questionNum);
 
     // prepare button template
 
